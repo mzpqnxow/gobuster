@@ -9,6 +9,7 @@ import (
 	"strings"
 	"unicode/utf8"
 	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 )
 
 // RedirectHandler ... A handler structure for HTTP 3xx responses
@@ -174,11 +175,12 @@ func ProcessDirEntry(s *State, word string, resultChan chan<- Result) {
 // PrintDirResult ... Print various metadata about an HTTP response
 func PrintDirResult(s *State, r *Result) {
 	output := ""
-
+	url := ""
+	var size int64 = 0
 	// Prefix if we're in verbose mode
 	if s.Verbose {
 		if s.StatusCodes.Contains(r.Status) {
-			output = "Found : "
+			output = "Found: "
 		} else {
 			output = "Missed: "
 		}
@@ -187,10 +189,13 @@ func PrintDirResult(s *State, r *Result) {
 	if s.StatusCodes.Contains(r.Status) || s.Verbose {
 		if s.Expanded {
 			output += s.URL
+			url += s.URL
 		} else {
 			output += "/"
+			url += "/"
 		}
 		output += r.Entity
+		url += r.Entity
 
 		if !s.NoStatus {
 			output += fmt.Sprintf(" (Status: %d)", r.Status)
@@ -198,13 +203,26 @@ func PrintDirResult(s *State, r *Result) {
 
 		if r.Size != nil {
 			output += fmt.Sprintf(" [Size: %d]", *r.Size)
+			size = *r.Size
+		} else {
+			size = -1
 		}
 		output += "\n"
 
-		fmt.Printf("%s", output)
-
+		
+		if s.JSON {
+			s.Logger.WithFields(logrus.Fields{
+	    		"URL": url,
+	    		"status": r.Status,
+	    		"size": size,
+	  		}).Info("HIT")
+		} else {
+			fmt.Printf("%s", output)
+		}
+		
 		if s.OutputFile != nil {
 			WriteToFile(output, s)
 		}
+	
 	}
 }

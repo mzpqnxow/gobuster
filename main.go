@@ -19,6 +19,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"github.com/sirupsen/logrus"
 	"./libgobuster"
 	//"github.com/mzpqnxow/gobuster/libgobuster"
 )
@@ -49,6 +51,7 @@ func ParseCmdLine() *libgobuster.State {
 	flag.StringVar(&s.Verb, "X", "GET", "Verb to use instead of GET (GET, POST, PUT) are valid)")
 	flag.StringVar(&s.Body, "b", "", "Content of POST body, i.e. '{}' for Application/JSON")
 	flag.StringVar(&s.Headers, "H", "", "List of arbitrary headers to supply, separated by '|' characters")
+	flag.BoolVar(&s.JSON, "J", false, "Use JSON formatting for output to stdout and output file")
 	flag.BoolVar(&s.Verbose, "v", false, "Verbose output (errors)")
 	flag.BoolVar(&s.ShowIPs, "i", false, "Show IP addresses (dns mode only)")
 	flag.BoolVar(&s.ShowCNAME, "cn", false, "Show CNAME records (dns mode only, cannot be used with '-i' option)")
@@ -74,9 +77,21 @@ func ParseCmdLine() *libgobuster.State {
 	return &s
 }
 
+func setLogging(s *libgobuster.State) {
+	s.Logger = logrus.New()
+	s.Logger.Out = os.Stdout
+	if s.JSON {
+		s.Logger.Formatter = &logrus.JSONFormatter{}
+	} else {
+		s.Logger.Formatter = (&logrus.TextFormatter{ForceColors: false})
+	}
+  	s.Logger.SetLevel(logrus.InfoLevel)
+}
+
 func main() {
 	state := ParseCmdLine()
 	if state != nil {
+		setLogging(state)
 		libgobuster.Process(state)
 	}
 }

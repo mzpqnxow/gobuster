@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"github.com/sirupsen/logrus"
 )
 
 // Result ...A single result which comes from an individual web
@@ -48,6 +49,8 @@ type State struct {
 	Headers		   string
 	FollowRedirect bool
 	IncludeLength  bool
+	JSON 		   bool
+	Logger         *logrus.Logger
 	Mode           string
 	NoStatus       bool
 	Password       string

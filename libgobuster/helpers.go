@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"github.com/sirupsen/logrus"
 )
 
 // PrepareSignalHandler ... Set up a SIGINT handler
@@ -25,91 +26,118 @@ func PrepareSignalHandler(s *State) {
 
 // Ruler ... Perform advanced screen I/O :>
 func Ruler(s *State) {
-	if !s.Quiet {
-		fmt.Println("=====================================================")
-	}
+	QuietPrintf(s, "=====================================================")
 }
 
 // Banner ... Print the Gobuster banner to the screen
 func Banner(s *State) {
-	if s.Quiet {
-		return
-	}
-
-	fmt.Println("")
-	fmt.Println("Gobuster v1.4.1              OJ Reeves (@TheColonial)")
+	QuietPrintf(s, "\n")
+	QuietPrintf(s, "Gobuster v1.4.1              OJ Reeves (@TheColonial)")
 	Ruler(s)
+}
+
+
+func QuietPrintf(s *State, format string, args ...interface{}) {
+    if !s.JSON && !s.Quiet {
+    	msg := fmt.Sprintf(format, args...)
+    	fmt.Print(msg)
+    }
 }
 
 // ShowConfig ... Print the state to the screen
 func ShowConfig(s *State) {
+	//var fields *logrus.Fields = {}
+	var fields = make(logrus.Fields)
+
 	if s.Quiet {
 		return
 	}
 
 	if s != nil {
-		fmt.Printf("[+] Mode         : %s\n", s.Mode)
-		fmt.Printf("[+] URL/Domain   : %s\n", s.URL)
-		fmt.Printf("[+] Threads      : %d\n", s.Threads)
+		QuietPrintf(s, "[+] Mode         : %s\n", s.Mode)
+		fields["Mode"] = s.Mode
+		QuietPrintf(s, "[+] URL/Domain   : %s\n", s.URL)
+		fields["URL"] = s.URL
+		QuietPrintf(s, "[+] Threads      : %d\n", s.Threads)
+		fields["Threads"] = s.Threads
 
 		wordlist := "stdin (pipe)"
 		if !s.StdIn {
 			wordlist = s.Wordlist
 		}
-		fmt.Printf("[+] Wordlist     : %s\n", wordlist)
+
+		QuietPrintf(s, "[+] Wordlist     : %s\n", wordlist)
+		fields["Output file"] = s.OutputFileName
 
 		if s.OutputFileName != "" {
-			fmt.Printf("[+] Output file  : %s\n", s.OutputFileName)
+			QuietPrintf(s, "[+] Output file  : %s\n", s.OutputFileName)
+			fields["Output file"] = s.OutputFileName
 		}
 
 		if s.Mode == "dir" {
-			fmt.Printf("[+] Status codes : %s\n", s.StatusCodes.Stringify())
-
+			QuietPrintf(s, "[+] Status codes : %s\n", s.StatusCodes.Stringify())
+			fields["Status codes"] = s.StatusCodes.Stringify()
+			
 			if s.ProxyURL != nil {
-				fmt.Printf("[+] Proxy        : %s\n", s.ProxyURL)
+				QuietPrintf(s, "[+] Proxy        : %s\n", s.ProxyURL)
+				fields["Proxy"] = s.ProxyURL
 			}
 
 			if s.Cookies != "" {
-				fmt.Printf("[+] Cookies      : %s\n", s.Cookies)
+				QuietPrintf(s, "[+] Cookies      : %s\n", s.Cookies)
+				fields["Cookies"] = s.Cookies
 			}
 
 			if s.UserAgent != "" {
-				fmt.Printf("[+] User Agent   : %s\n", s.UserAgent)
+				QuietPrintf(s, "[+] User Agent   : %s\n", s.UserAgent)
+				fields["User Agent"] = s.UserAgent
 			}
 
 			if s.IncludeLength {
-				fmt.Printf("[+] Show length  : true\n")
+				QuietPrintf(s, "[+] Show length  : true\n")
+				fields["Show length"] = "true"
 			}
 
 			if s.Username != "" {
-				fmt.Printf("[+] Auth User    : %s\n", s.Username)
+				QuietPrintf(s, "[+] Auth User    : %s\n", s.Username)
+				fields["Auth User"] = s.Username
 			}
 
 			if len(s.Extensions) > 0 {
-				fmt.Printf("[+] Extensions   : %s\n", strings.Join(s.Extensions, ","))
+				QuietPrintf(s, "[+] Extensions   : %s\n", strings.Join(s.Extensions, ","))
+				fields["Extensions"] = strings.Join(s.Extensions, ",")
 			}
 
 			if s.UseSlash {
-				fmt.Printf("[+] Add Slash    : true\n")
+				QuietPrintf(s, "[+] Add Slash    : true\n")
+				fields["Add Slash"] = "true"
 			}
 
 			if s.FollowRedirect {
-				fmt.Printf("[+] Follow Redir : true\n")
+				QuietPrintf(s, "[+] Follow Redir : true\n")
+				fields["Follow Redir"] = "true"
 			}
 
 			if s.Expanded {
-				fmt.Printf("[+] Expanded     : true\n")
+				QuietPrintf(s, "[+] Expanded     : true\n")
+				fields["Expanded"] = "true"
 			}
 
 			if s.NoStatus {
-				fmt.Printf("[+] No status    : true\n")
+				QuietPrintf(s, "[+] No status    : true\n")
+				fields["No status"] = "true"
 			}
 
 			if s.Verbose {
-				fmt.Printf("[+] Verbose      : true\n")
+				QuietPrintf(s, "[+] Verbose      : true\n")
+				fields["Verbose"] = "true"
 			}
 		}
+		fields["Status"] = "starting"
 
+		if s.JSON {
+			s.Logger.WithFields(fields).Info("Scan initializing")
+		}
 		Ruler(s)
 	}
 }
