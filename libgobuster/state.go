@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Result ...A single result which comes from an individual web
@@ -41,6 +41,7 @@ type StringSet struct {
 // line when the program is invoked.
 type State struct {
 	Body	       string
+	Done		   int64
 	Client         *http.Client
 	Cookies        string
 	ContentType    string
@@ -50,7 +51,7 @@ type State struct {
 	FollowRedirect bool
 	IncludeLength  bool
 	JSON 		   bool
-	Logger         *logrus.Logger
+	Logger         *log.Logger
 	Mode           string
 	NoStatus       bool
 	Password       string
@@ -59,11 +60,14 @@ type State struct {
 	ProxyURL       *url.URL
 	Quiet          bool
 	Request		   *http.Request
+	ScreenLogger   *log.Logger
 	Setup          SetupFunc
 	ShowIPs        bool
 	ShowCNAME      bool
 	StatusCodes    IntSet
+	StdoutLogger   *log.Logger
 	Threads        int
+	FullLogging    bool
 	URL            string
 	UseSlash       bool
 	UserAgent      string
@@ -89,9 +93,11 @@ func Process(s *State) {
 	ShowConfig(s)
 
 	if !s.Setup(s) {
-		Ruler(s)
+		fmt.Println()
 		return
 	}
+
+
 
 	PrepareSignalHandler(s)
 
@@ -132,6 +138,7 @@ func Process(s *State) {
 	// appear from the worker threads.
 	go func() {
 		for r := range resultChan {
+			s.Done++
 			s.Printer(s, &r)
 		}
 		printerGroup.Done()
@@ -185,5 +192,5 @@ func Process(s *State) {
 	if s.OutputFile != nil {
 		outputFile.Close()
 	}
-	Ruler(s)
+	fmt.Println()
 }

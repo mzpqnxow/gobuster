@@ -24,20 +24,13 @@ func PrepareSignalHandler(s *State) {
 	}()
 }
 
-// Ruler ... Perform advanced screen I/O :>
-func Ruler(s *State) {
-	QuietPrintf(s, "=====================================================")
-}
-
 // Banner ... Print the Gobuster banner to the screen
 func Banner(s *State) {
-	QuietPrintf(s, "\n")
-	QuietPrintf(s, "Gobuster v1.4.1              OJ Reeves (@TheColonial)")
-	Ruler(s)
+	RespectfulPrintf(s, "Gobuster v1.4.1              OJ Reeves (@TheColonial)\n")
 }
 
 
-func QuietPrintf(s *State, format string, args ...interface{}) {
+func RespectfulPrintf(s *State, format string, args ...interface{}) {
     if !s.JSON && !s.Quiet {
     	msg := fmt.Sprintf(format, args...)
     	fmt.Print(msg)
@@ -46,99 +39,83 @@ func QuietPrintf(s *State, format string, args ...interface{}) {
 
 // ShowConfig ... Print the state to the screen
 func ShowConfig(s *State) {
-	//var fields *logrus.Fields = {}
-	var fields = make(logrus.Fields)
+	//var logFields *logrus.Fields = {}
+	var logFields = make(logrus.Fields)
 
 	if s.Quiet {
 		return
 	}
 
 	if s != nil {
-		QuietPrintf(s, "[+] Mode         : %s\n", s.Mode)
-		fields["Mode"] = s.Mode
-		QuietPrintf(s, "[+] URL/Domain   : %s\n", s.URL)
-		fields["URL"] = s.URL
-		QuietPrintf(s, "[+] Threads      : %d\n", s.Threads)
-		fields["Threads"] = s.Threads
-
+		logFields["Mode"] = s.Mode
+		logFields["URL/Domain"] = s.URL
+		logFields["Threads"] = strconv.Itoa(s.Threads)
+		
 		wordlist := "stdin (pipe)"
+		
 		if !s.StdIn {
 			wordlist = s.Wordlist
 		}
-
-		QuietPrintf(s, "[+] Wordlist     : %s\n", wordlist)
-		fields["Output file"] = s.OutputFileName
+		logFields["Wordlist"] = wordlist
 
 		if s.OutputFileName != "" {
-			QuietPrintf(s, "[+] Output file  : %s\n", s.OutputFileName)
-			fields["Output file"] = s.OutputFileName
+			logFields["Output file"] = s.OutputFileName
 		}
 
 		if s.Mode == "dir" {
-			QuietPrintf(s, "[+] Status codes : %s\n", s.StatusCodes.Stringify())
-			fields["Status codes"] = s.StatusCodes.Stringify()
+			logFields["Status Codes"] = s.StatusCodes.Stringify()
 			
 			if s.ProxyURL != nil {
-				QuietPrintf(s, "[+] Proxy        : %s\n", s.ProxyURL)
-				fields["Proxy"] = s.ProxyURL
+				logFields["Proxy"] = s.ProxyURL
 			}
 
 			if s.Cookies != "" {
-				QuietPrintf(s, "[+] Cookies      : %s\n", s.Cookies)
-				fields["Cookies"] = s.Cookies
+				logFields["Cookies"] = s.Cookies
 			}
 
 			if s.UserAgent != "" {
-				QuietPrintf(s, "[+] User Agent   : %s\n", s.UserAgent)
-				fields["User Agent"] = s.UserAgent
+				logFields["User Agent"] = s.UserAgent
 			}
 
 			if s.IncludeLength {
-				QuietPrintf(s, "[+] Show length  : true\n")
-				fields["Show length"] = "true"
+				logFields["Show length"] = "true"
 			}
 
 			if s.Username != "" {
-				QuietPrintf(s, "[+] Auth User    : %s\n", s.Username)
-				fields["Auth User"] = s.Username
+				logFields["Auth User"] = s.Username
 			}
 
 			if len(s.Extensions) > 0 {
-				QuietPrintf(s, "[+] Extensions   : %s\n", strings.Join(s.Extensions, ","))
-				fields["Extensions"] = strings.Join(s.Extensions, ",")
+				logFields["Extensions"] = strings.Join(s.Extensions, ",")
 			}
 
 			if s.UseSlash {
-				QuietPrintf(s, "[+] Add Slash    : true\n")
-				fields["Add Slash"] = "true"
+				logFields["Add Slash"] = "true"
 			}
 
 			if s.FollowRedirect {
-				QuietPrintf(s, "[+] Follow Redir : true\n")
-				fields["Follow Redir"] = "true"
+				logFields["Follow Redir"] = "true"
 			}
 
 			if s.Expanded {
-				QuietPrintf(s, "[+] Expanded     : true\n")
-				fields["Expanded"] = "true"
+				logFields["Expanded"] = "true"
 			}
 
 			if s.NoStatus {
-				QuietPrintf(s, "[+] No status    : true\n")
-				fields["No status"] = "true"
+				logFields["No status"] = "true"
 			}
 
 			if s.Verbose {
-				QuietPrintf(s, "[+] Verbose      : true\n")
-				fields["Verbose"] = "true"
+				logFields["Verbose"] = "true"
 			}
 		}
-		fields["Status"] = "starting"
-
-		if s.JSON {
-			s.Logger.WithFields(fields).Info("Scan initializing")
+		logFields["Status"] = "starting"
+		//s.Logger.WithFields(logFields).Info("Bust Begin")
+		RespectfulPrintf(s, "--- Configuration")
+		for key,value := range logFields {
+			RespectfulPrintf(s, "\n  * %s=%s", key, value)
 		}
-		Ruler(s)
+		RespectfulPrintf(s, "\n\n")
 	}
 }
 

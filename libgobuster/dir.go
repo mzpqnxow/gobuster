@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"strconv"
 	"unicode/utf8"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // RedirectHandler ... A handler structure for HTTP 3xx responses
@@ -174,55 +175,61 @@ func ProcessDirEntry(s *State, word string, resultChan chan<- Result) {
 
 // PrintDirResult ... Print various metadata about an HTTP response
 func PrintDirResult(s *State, r *Result) {
-	output := ""
-	url := ""
-	var size int64 = 0
-	// Prefix if we're in verbose mode
-	if s.Verbose {
-		if s.StatusCodes.Contains(r.Status) {
-			output = "Found: "
-		} else {
-			output = "Missed: "
-		}
+	var logFields = make(log.Fields)
+
+	if !s.StatusCodes.Contains(r.Status) && !s.Verbose {
+		return
 	}
 
 	if s.StatusCodes.Contains(r.Status) || s.Verbose {
-		if s.Expanded {
-			output += s.URL
-			url += s.URL
-		} else {
-			output += "/"
-			url += "/"
+		if s.Verbose {
+			if s.StatusCodes.Contains(r.Status) {
+				logFields["result"] = "hit"
+			} else {
+				logFields["result"] = "miss"
+			}
 		}
-		output += r.Entity
-		url += r.Entity
+
+		if s.Expanded {
+			logFields["URL"] = s.URL + r.Entity
+		} else {
+			logFields["URL"] = "/" + r.Entity
+		}
 
 		if !s.NoStatus {
-			output += fmt.Sprintf(" (Status: %d)", r.Status)
+			logFields["Status"] = strconv.Itoa(r.Status)
 		}
 
 		if r.Size != nil {
-			output += fmt.Sprintf(" [Size: %d]", *r.Size)
-			size = *r.Size
-		} else {
-			size = -1
+			i64 := strconv.FormatInt(*r.Size, 10) 
+			logFields["Size"] = i64
 		}
-		output += "\n"
 
-		
+
+		// s.Logger.WithFields(log.Fields{
+	 //    		"URL": url,
+	 //    		"status": r.Status,
+	 //    		"size": size,
+	 //  		}).Info("HIT")
+
+
+		s.Logger.WithFields(logFields).Info("Result")
+
+		/*
 		if s.JSON {
-			s.Logger.WithFields(logrus.Fields{
+			s.Logger.WithFields(log.Fields{
 	    		"URL": url,
 	    		"status": r.Status,
 	    		"size": size,
 	  		}).Info("HIT")
 		} else {
-			fmt.Printf("%s", output)
+			fmt.Print(output)
 		}
-		
-		if s.OutputFile != nil {
-			WriteToFile(output, s)
-		}
+		*/
+
+		//if s.OutputFile != nil {
+		//	WriteToFile(output, s)
+		//}
 	
 	}
 }
